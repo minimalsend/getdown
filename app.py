@@ -3,6 +3,7 @@ import os
 import tempfile
 import yt_dlp
 import instaloader
+from instaloader.context import InstaloaderContext
 from facebook_scraper import get_posts
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 
