@@ -6,7 +6,7 @@ import instaloader
 from facebook_scraper import get_posts
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 
-TOKEN = "SEU_TOKEN_AQUI"
+TOKEN = "8220244020:AAEL80e7YRUB9RSGRBcECUUOfejikJAlsQE"
 bot = Bot(TOKEN)
 app = Flask(__name__)
 
