@@ -1,0 +1,8 @@
+Flask
+yt-dlp
+instaloader
+facebook-scraper
+requests
+gunicorn
+lxml_html_clean
+telegram
