@@ -5,3 +5,4 @@ facebook-scraper
 python-telegram-bot==13.15
 gunicorn
 lxml_html_clean
+imghdr-pure
