@@ -12,10 +12,31 @@ app = Flask(__name__)
 
 # -------------------- Funções de download --------------------
 
+import tempfile
+import yt_dlp
+
 def download_youtube_video(url):
     tmp = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
     tmp.close()
-    ydl_opts = {'outtmpl': tmp.name, 'format': 'best'}
+    
+    # Opções do yt_dlp
+    ydl_opts = {
+        'outtmpl': tmp.name,
+        'format': 'best',
+        'nocheckcertificate': True,
+        'cookies': 'cookies.txt',  # cookies exportados do navegador
+        'noplaylist': True,
+        'quiet': False,
+        'merge_output_format': 'mp4',
+        'headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
+                          'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+                          'Chrome/116.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+        }
+    }
+    
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
@@ -24,16 +45,44 @@ def download_youtube_video(url):
         print(f"Erro YouTube: {e}")
         return None
 
-def download_instagram_post(url):
+
+def download_instagram_post(url, cookie_file=None):
     try:
-        loader = instaloader.Instaloader(dirname_pattern=tempfile.gettempdir())
+        # Criar loader
+        loader = instaloader.Instaloader(
+            dirname_pattern=tempfile.gettempdir(),
+            download_comments=False,
+            save_metadata=False,
+            compress_json=False
+        )
+
+        # Definir headers como navegador
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
+                          'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+                          'Chrome/116.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+        }
+        loader.context = InstaloaderContext()
+        loader.context._session.headers.update(headers)
+
+        # Carregar cookies se fornecido
+        if cookie_file:
+            loader.load_session_from_file(username=None, filename=cookie_file)
+
+        # Pegar shortcode do post
         shortcode = url.split("/")[-2]
         post = instaloader.Post.from_shortcode(loader.context, shortcode)
+
         if post.is_video:
             tmp_file = os.path.join(tempfile.gettempdir(), f"{post.shortcode}.mp4")
             loader.download_post(post, target=tmp_file.replace(".mp4", ""))
             return tmp_file
-        return None
+        else:
+            print("O post não contém vídeo.")
+            return None
+
     except Exception as e:
         print(f"Erro Instagram: {e}")
         return None
