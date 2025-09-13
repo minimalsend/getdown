@@ -4,8 +4,10 @@ import tempfile
 import yt_dlp
 import instaloader
 from facebook_scraper import get_posts
+import imghdr_pure as imghdr
+import sys
+sys.modules["imghdr"] = imghdr
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
-
 TOKEN = "8220244020:AAEL80e7YRUB9RSGRBcECUUOfejikJAlsQE"
 bot = Bot(TOKEN)
 app = Flask(__name__)
