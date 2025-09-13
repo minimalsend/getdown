@@ -5,6 +5,7 @@ import yt_dlp
 import instaloader
 from facebook_scraper import get_posts
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
+
 TOKEN = "8220244020:AAEL80e7YRUB9RSGRBcECUUOfejikJAlsQE"
 bot = Bot(TOKEN)
 app = Flask(__name__)
@@ -15,42 +16,59 @@ def download_youtube_video(url):
     tmp = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
     tmp.close()
     ydl_opts = {'outtmpl': tmp.name, 'format': 'best'}
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
-    return tmp.name
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+        return tmp.name
+    except Exception as e:
+        print(f"Erro YouTube: {e}")
+        return None
 
 def download_instagram_post(url):
-    loader = instaloader.Instaloader(dirname_pattern=tempfile.gettempdir())
-    shortcode = url.split("/")[-2]
-    post = instaloader.Post.from_shortcode(loader.context, shortcode)
-    if post.is_video:
-        tmp_file = os.path.join(tempfile.gettempdir(), f"{post.shortcode}.mp4")
-        loader.download_post(post, target=tmp_file.replace(".mp4", ""))
-        return tmp_file
-    return None
+    try:
+        loader = instaloader.Instaloader(dirname_pattern=tempfile.gettempdir())
+        shortcode = url.split("/")[-2]
+        post = instaloader.Post.from_shortcode(loader.context, shortcode)
+        if post.is_video:
+            tmp_file = os.path.join(tempfile.gettempdir(), f"{post.shortcode}.mp4")
+            loader.download_post(post, target=tmp_file.replace(".mp4", ""))
+            return tmp_file
+        return None
+    except Exception as e:
+        print(f"Erro Instagram: {e}")
+        return None
 
 def download_facebook_video(url):
     tmp = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
     tmp.close()
     ydl_opts = {'outtmpl': tmp.name, 'format': 'best'}
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
-    return tmp.name
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+        return tmp.name
+    except Exception as e:
+        print(f"Erro Facebook: {e}")
+        return None
 
 def get_facebook_post_details(url):
     try:
         posts = list(get_posts(post_urls=[url], cookies="cookies.txt"))
         return posts[0] if posts else {}
-    except Exception:
+    except Exception as e:
+        print(f"Erro scraping Facebook: {e}")
         return {}
 
 def download_twitter_video(url):
     tmp = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
     tmp.close()
     ydl_opts = {'outtmpl': tmp.name, 'format': 'best'}
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
-    return tmp.name
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+        return tmp.name
+    except Exception as e:
+        print(f"Erro Twitter: {e}")
+        return None
 
 # -------------------- Webhook Telegram --------------------
 
@@ -71,14 +89,14 @@ def webhook():
 
     parts = text.split(" ", 1)
     if len(parts) < 2:
-        bot.send_message(chat_id, "Você precisa enviar a URL junto. Exemplo:\n`/get https://youtube.com/...`", parse_mode="Markdown")
+        bot.send_message(chat_id, "Envie a URL. Ex: `/get https://youtube.com/...`", parse_mode="Markdown")
         return "ok"
 
     url = parts[1]
     msg = bot.send_message(chat_id, "⏳ Gerando vídeo...")
 
+    tmp_file = None
     try:
-        # Detecta plataforma
         if "youtube.com" in url or "youtu.be" in url:
             tmp_file = download_youtube_video(url)
         elif "instagram.com" in url:
@@ -96,14 +114,11 @@ def webhook():
             return "ok"
 
         # Botão de excluir
-        keyboard = InlineKeyboardMarkup([[
-            InlineKeyboardButton("❌ Excluir", callback_data=f"delete_{user_id}")
-        ]])
-
+        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("❌ Excluir", callback_data=f"delete_{user_id}")]])
         bot.edit_message_text("✅ Vídeo pronto!", chat_id, msg.message_id)
         bot.send_video(chat_id, video=open(tmp_file, "rb"), reply_markup=keyboard)
 
-        os.remove(tmp_file)  # apaga arquivo temporário
+        os.remove(tmp_file)
     except Exception as e:
         bot.edit_message_text(f"❌ Erro: {e}", chat_id, msg.message_id)
 
